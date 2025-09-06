@@ -6,6 +6,7 @@ import (
 	"strconv"
 )
 
+// пишет в канал
 func worker(ch <-chan int, id int) {
 	for val := range ch {
 		fmt.Printf("worker %v прочитал значение %v \n", id, val)
@@ -14,7 +15,7 @@ func worker(ch <-chan int, id int) {
 
 func main() {
 	ch := make(chan int)
-	workerAmount, err := strconv.Atoi(os.Args[len(os.Args)-1])
+	workerAmount, err := strconv.Atoi(os.Args[len(os.Args)-1]) // преобразуем аргумент командной строки в число
 
 	if err != nil || workerAmount <= 0 {
 		fmt.Println("вы ввели невалидное число число")

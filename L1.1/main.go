@@ -2,6 +2,7 @@ package main
 
 import "fmt"
 
+// моя реализация структур
 type Action struct {
     Human
     Name   string
