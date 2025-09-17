@@ -4,7 +4,7 @@ import (
 	"runtime"
 	"sync"
 )
-
+// выход из gorутины через runtime.Goexit() + условие
 func main() {
 	// Create a WaitGroup
 	var wg sync.WaitGroup

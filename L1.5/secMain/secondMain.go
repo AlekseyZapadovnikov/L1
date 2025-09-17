@@ -17,10 +17,9 @@ func main() {
 	// Используем time.After для таймаута
 	timeout := time.After(time.Duration(*sec) * time.Second)
 
-	wg.Add(1)
+	// запускаем горутины
+	wg.Add(2)
 	go writeGoroutine(ch, timeout, &wg)
-
-	wg.Add(1)
 	go readGoroutine(ch, &wg)
 
 	wg.Wait()
@@ -37,12 +36,14 @@ func writeGoroutine(ch chan<- int, timeout <-chan time.Time, wg *sync.WaitGroup)
 		case <-timeout:
 			// время вышло — завершаемся и закрываем канал (через defer)
 			return
+		// иначе выполняем какую-то работу
 		case ch <- i + 1:
 			i++
 		}
 	}
 }
 
+// тут мы просто читаем из канала
 func readGoroutine(ch <-chan int, wg *sync.WaitGroup) {
 	defer wg.Done()
 	for v := range ch {

@@ -10,11 +10,12 @@ import (
 var timer int
 
 func main() {
+	// go run .\L1.5\main.go -sec (ваше целое число секунд)
 	flag.IntVar(&timer, "sec", 3, "параметр N - количество секунд до завершения работы") // флаг при запуске --timer
 	flag.Parse()
 
 	wg := &sync.WaitGroup{}
-	ch := make(chan int, 100)
+	ch := make(chan int, 100) // буферезированный канал, чтобы не возникало блокировки (это ускорит выполнение программы)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*time.Duration(timer)) // создаём контекст с таймаутом
 	defer cancel() // если main завершится раньше, то отменим контекст (частая практика)
 	

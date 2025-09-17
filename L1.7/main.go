@@ -27,21 +27,25 @@ import (
 // 1. реализация: RWMutexMap
 // --------------------------------------------------------------------
 
+// просто мапа с RWMutex
 type RWMutexMap struct {
 	mu sync.RWMutex
 	m  map[string]int
 }
 
+// конструктор
 func NewRWMutexMap() *RWMutexMap {
 	return &RWMutexMap{m: make(map[string]int)}
 }
 
+// инкремент значения по ключу
 func (r *RWMutexMap) Inc(key string) {
 	r.mu.Lock()
 	r.m[key]++
 	r.mu.Unlock()
 }
 
+// Range - итерирует по всем ключам и значениям, вызывая функцию f для каждой пары
 func (r *RWMutexMap) Range(f func(key string, value int)) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -64,12 +68,13 @@ func countWordsInFileRW(path string, counts *RWMutexMap, wg *sync.WaitGroup) {
 	}
 	defer file.Close()
 
+	// читаем слова из файла
 	scanner := bufio.NewScanner(file)
 	scanner.Split(bufio.ScanWords)
 	for scanner.Scan() {
 		cleanWord := cleanString(scanner.Text())
 		if len(cleanWord) > 0 {
-			counts.Inc(cleanWord)
+			counts.Inc(cleanWord) // инкрементим значение по ключу в RWMutexMap
 		}
 	}
 	if err := scanner.Err(); err != nil && err != io.EOF {
@@ -80,6 +85,7 @@ func countWordsInFileRW(path string, counts *RWMutexMap, wg *sync.WaitGroup) {
 // countWordsInFileSM - воркер для sync.Map.
 func countWordsInFileSM(path string, counts *sync.Map, wg *sync.WaitGroup) {
 	defer wg.Done()
+	// открываем файл
 	file, err := os.Open(path)
 	if err != nil {
 		log.Printf("Ошибка открытия файла %s: %v", path, err)
@@ -87,13 +93,14 @@ func countWordsInFileSM(path string, counts *sync.Map, wg *sync.WaitGroup) {
 	}
 	defer file.Close()
 
+	// читаем слова из файла
 	scanner := bufio.NewScanner(file)
 	scanner.Split(bufio.ScanWords)
 	for scanner.Scan() {
 		cleanWord := cleanString(scanner.Text())
 		if len(cleanWord) > 0 {
-			ptr, _ := counts.LoadOrStore(cleanWord, new(int64))
-			atomic.AddInt64(ptr.(*int64), 1)
+			ptr, _ := counts.LoadOrStore(cleanWord, new(int64)) // сохраняем в sync.Map указатель на int64
+			atomic.AddInt64(ptr.(*int64), 1) // инкрементируем это значение атомарно
 		}
 	}
 	if err := scanner.Err(); err != nil && err != io.EOF {
@@ -102,6 +109,7 @@ func countWordsInFileSM(path string, counts *sync.Map, wg *sync.WaitGroup) {
 }
 
 // cleanString - вспомогательная функция для очистки слов.
+// убирает пунктуацию и приводит к нижнему регистру
 func cleanString(s string) string {
 	return strings.Map(func(r rune) rune {
 		if unicode.IsPunct(r) || unicode.IsSpace(r) {
@@ -120,15 +128,18 @@ func main() {
 
 	// --- Тест 1: RWMutexMap ---
 	fmt.Println("\n--- Запуск с RWMutexMap ---")
+	// создаём всё необходимое
 	rwMutexMap := NewRWMutexMap()
 	var wg1 sync.WaitGroup
 	start1 := time.Now()
+	// запускаем горутины
 	for _, path := range paths {
 		wg1.Add(1)
 		go countWordsInFileRW(path, rwMutexMap, &wg1)
 	}
 	wg1.Wait()
 	maxCount1 := 0
+	// считаем ответ на задачу (некий функциональный подход)
 	rwMutexMap.Range(func(key string, value int) {
 		if value > maxCount1 {
 			maxCount1 = value
@@ -140,6 +151,8 @@ func main() {
 
 	// --- Тест 2: Стандартная sync.Map ---
 	fmt.Println("\n--- Запуск со стандартной sync.Map ---")
+	// всё аналогично первому тесту
+	// создаём всё необходимое, запускоем горутины, потом считаем ответ
 	var syncMap sync.Map
 	var wg2 sync.WaitGroup
 	start2 := time.Now()
@@ -175,7 +188,10 @@ PS C:\Users\Asus\Desktop\go_p\WB_L1!>
 
 ------------------------------------------------------------------------
 Выводы: я написал фигню, потому что по-хорошему блокировать только нужное значение, а не всю мапу
-поэтому sync.Map оказался быстрее, я думаю
-надо было не int использовать, а *int64 и атомарно инкрементить, но я это понял уже после того как всё написал
+поэтому sync.Map оказался быстрее, я думаю (вообще не уверен)
+надо было не int использовать, а *int64 и атомарно инкрементить мб, но я это понял уже после того как всё написал
+------------------------------------------------------------------------
+наверное как вывод можно сказать, что не стоит пытаться что-то изобретать,
+если глубинно не понимаешь, как это работает
 ------------------------------------------------------------------------
 */

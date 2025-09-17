@@ -55,7 +55,7 @@ func createHugeString(n int) string {
 }
 
 func someFunc() {
-	v := createHugeString(1 << 10) // ~1MiB
+	v := createHugeString(1 << 10)
 	// скопируем только первые 100 символов в маленький буфер
 	want := 100
 	b := make([]rune, want)

@@ -6,12 +6,15 @@ import (
 	"sync"
 )
 
+// остановка горутины через контекст с дедлайном
 func main() {
-	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(3*time.Second))
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 	wg := &sync.WaitGroup{}
 
 	wg.Add(1)
+	// запускаем горутину, которая будет работать, пока контекст не будет отменён
+	// а отменён он будет по прошествии 3 секунд
 	go func(ctx context.Context) {
 		defer wg.Done()
 		for {
@@ -26,5 +29,5 @@ func main() {
 		}
 	}(ctx)
 
-	wg.Wait()
+	wg.Wait() // нужно чтобы горутина отработала
 }

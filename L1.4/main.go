@@ -11,6 +11,7 @@ import (
 
 func worker(ch <-chan int, id int, wg *sync.WaitGroup) {
 	defer wg.Done()
+	// читаем из канала
 	for val := range ch {
 		fmt.Printf("worker %d прочитал %d\n", id, val)
 	}
@@ -18,15 +19,18 @@ func worker(ch <-chan int, id int, wg *sync.WaitGroup) {
 }
 
 func main() {
-	workerAmount, err := strconv.Atoi(os.Args[len(os.Args)-1])
+	workerAmount, err := strconv.Atoi(os.Args[len(os.Args)-1]) // парсим последний аргумент командной строки
+	// проводим валидацию числа
 	if err != nil || workerAmount <= 0 {
 		fmt.Println("Вы ввели невалидное число")
 		return
 	}
 
 	// Ловим Ctrl+C
-	sigCh := make(chan os.Signal, 1)
+	sigCh := make(chan os.Signal, 1) // канал сигналов
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+	/* ignal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM) говорит рантайму Go — 
+	перенаправлять поступающие ОС-сигналы SIGINT и SIGTERM в канал sigCh*/
 
 	ch := make(chan int)
 	wg := sync.WaitGroup{}
@@ -40,7 +44,7 @@ func main() {
 	// Главная горутина: продюсер + ожидание сигнала
 	counter := 0
 
-// синтаксическиц сахар, это то чего мне так не хватала в питоне <3
+// синтаксическиц сахар, это то чего мне так не хватала в питоне (двойной брэйк) <3
 loop:
 	for {
 		select {
